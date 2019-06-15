@@ -7,14 +7,28 @@
     <title></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
     <script src="/socket.io/socket.io.js"></script>
+    <style>
+        #canvas {
+            filter: sepia(100%);
+        }
+        #canvas:after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            box-shadow: inset 0px 0px 150px black;
+        }
+    </style>
 </head>
 <body>
 
-<video id="video" data-control="" data-file="" controls>
+<video id="video" data-control="" data-file="" style="width: 800px;">
     <source id="videoSrc" type="video/mp4">
 </video>
 
+<canvas id="canvas"></canvas>
+
 <audio id="audio" data-control="" data-file=""></audio>
+<audio id="ticktock"></audio>
 
 <script>
     let socket = io();
@@ -22,31 +36,108 @@
     let videoSrc = document.getElementById('videoSrc');
     let audio = document.getElementById('audio');
 
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    ctx.globalCompositeOperation = 'multiply';
+    
+    function getEventObj(e) {
+        return {
+            control: e.target.getAttribute('data-control'),
+            file: e.target.getAttribute('data-file')
+        }
+    }
+
+    function createCanvasAndCtxFromImage(el, width, height) {
+        const canvas = document.createElement('canvas');
+        if (!width) width = el.width;
+        if (!height) height = el.height;
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(el, 0, 0, width, height);
+        return [canvas, ctx];
+    };
+
+    function getGradient(ctx, width, height, colorSteps) {
+        const gradient = ctx.createRadialGradient(
+            width / 2,
+            height / 2,
+            0,
+            width / 2,
+            height / 2,
+            Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2)),
+        );
+        colorSteps.forEach((color, idx, steps) => {
+            gradient.addColorStop(idx / (steps.length - 1), color);
+        });
+        return gradient;
+    };
+
+    video.addEventListener('loadedmetadata', function() {
+        canvas.width = video.offsetWidth;
+        canvas.height = video.offsetHeight;
+    });
+    
+    video.addEventListener('play', function() {
+        let $this = this; //cache
+        console.log('playing');
+        (function loop() {
+            if (!$this.paused && !$this.ended) {
+                // copy video frame to canvas
+                ctx.drawImage($this, 0, 0, canvas.width, canvas.height);
+
+                // vignette
+
+                [_, vCtx] = createCanvasAndCtxFromImage($this, canvas.width, canvas.height);
+
+                ctx.globalCompositeOperation = (ctx.globalCompositeOperation === 'multiply'
+                    ? 'multiply'
+                    : 'source-over'
+                );
+                ctx.fillStyle = getGradient(ctx, canvas.width, canvas.height, [
+                    'rgba(0,0,0,0)',
+                    'rgba(0,0,0,0)',
+                    `rgba(0,0,0,.7)`,
+                ]);
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                const vfData = vCtx.getImageData(0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                imageData.data.set(imageData.data.map((v, i) => v * vfData.data[i] / 255));
+                ctx.putImageData(imageData, 0, 0);
+
+
+
+                // do loop
+                setTimeout(loop, 1000 / 30); // drawing at 30fps
+            }
+        })();
+    }, 0);
+
     video.addEventListener('loaded', (event) => {
-        socket.emit('video-loaded', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        socket.emit('video-loaded', getEventObj(event));
         video.style.display = 'block';
     });
 
     video.addEventListener('playing', (event) => {
-        socket.emit('video-playing', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        socket.emit('video-playing', getEventObj(event));
         video.style.display = 'block';
     });
 
     video.addEventListener('ended', (event) => {
-        socket.emit('video-ended', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        socket.emit('video-ended', getEventObj(event));
         video.style.display = 'none';
     });
 
     audio.addEventListener('loaded', (event) => {
-        socket.emit('audio-loaded', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        socket.emit('audio-loaded', getEventObj(event));
     });
 
     audio.addEventListener('playing', (event) => {
-        socket.emit('audio-playing', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        socket.emit('audio-playing', getEventObj(event));
     });
 
     audio.addEventListener('ended', (event) => {
-        socket.emit('audio-ended', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        socket.emit('audio-ended', getEventObj(event));
     });
 
     async function playVideo() {
