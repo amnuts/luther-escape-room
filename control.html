@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <style>
+        .container a {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+<section class="section">
+    <div class="container">
+        <p id="feedback"></p>
+    </div>
+    <div class="container">
+        <a id="intro" class="button is-medium is-block is-link">
+            Play 'intro' video
+        </a>
+        <a id="hurry" class="button is-medium is-block is-link">
+            Play 'hurry up' video
+        </a>
+        <a id="monster1" class="button is-medium is-block is-link">
+            Play 'monster echo' audio
+        </a>
+    </div>
+</section>
+
+<script>
+    let socket = io();
+    let feedback = document.getElementById('feedback');
+
+    document.getElementById("intro").addEventListener("click", function(e){
+        e.preventDefault();
+        this.classList.add("is-loading");
+        socket.emit('video-start', {control:'intro', file:'intro'});
+    });
+    document.getElementById("hurry").addEventListener("click", function(e){
+        e.preventDefault();
+        this.classList.add("is-loading");
+        socket.emit('video-start', {control:'hurry', file:'hurry'});
+    });
+    document.getElementById("monster1").addEventListener("click", function(e){
+        e.preventDefault();
+        this.classList.add("is-loading");
+        socket.emit('audio-start', {control:'monster1', file:'monster_echo'});
+    });
+
+    socket.on('video-loaded', function(data){
+        document.getElementById(data.control).classList.remove('is-loading');
+    });
+    socket.on('video-playing', function(data){
+        console.log('video playing', data);
+        document.getElementById(data.control).classList.remove('is-loading');
+        feedback.innerText = `Currently playing ${data.control} video`;
+    });
+    socket.on('video-ended', function(data){
+        console.log('video ended', data);
+        feedback.innerText = '';
+    });
+
+    socket.on('audio-loaded', function(data){
+        document.getElementById(data.control).classList.remove('is-loading');
+    });
+    socket.on('audio-playing', function(data){
+        console.dir(data);
+        document.getElementById(data.control).classList.remove('is-loading');
+        feedback.innerText = `Currently playing ${data.control} audio`;
+    });
+    socket.on('audio-ended', function(data){
+        feedback.innerText = '';
+    });
+</script>
+
+</body>
+</html>

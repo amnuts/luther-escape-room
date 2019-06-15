@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+<video id="video" data-control="" data-file="" controls>
+    <source id="videoSrc" type="video/mp4">
+</video>
+
+<audio id="audio" data-control="" data-file=""></audio>
+
+<script>
+    let socket = io();
+    let video = document.getElementById('video');
+    let videoSrc = document.getElementById('videoSrc');
+    let audio = document.getElementById('audio');
+
+    video.addEventListener('loaded', (event) => {
+        socket.emit('video-loaded', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        video.style.display = 'block';
+    });
+
+    video.addEventListener('playing', (event) => {
+        socket.emit('video-playing', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        video.style.display = 'block';
+    });
+
+    video.addEventListener('ended', (event) => {
+        socket.emit('video-ended', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+        video.style.display = 'none';
+    });
+
+    audio.addEventListener('loaded', (event) => {
+        socket.emit('audio-loaded', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+    });
+
+    audio.addEventListener('playing', (event) => {
+        socket.emit('audio-playing', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+    });
+
+    audio.addEventListener('ended', (event) => {
+        socket.emit('audio-ended', {control:event.target.getAttribute('data-control'), file:event.target.getAttribute('data-file')});
+    });
+
+    async function playVideo() {
+        try {
+            await video.load();
+            await video.play();
+        } catch(err) {}
+    }
+
+    async function playAudio() {
+        try {
+            await audio.load();
+            await audio.play();
+        } catch(err) {}
+    }
+
+    socket.on('video-start', function(data){
+        console.log('start the video');
+        video.setAttribute('data-control', data.control);
+        video.setAttribute('data-file', data.file);
+        videoSrc.setAttribute('src', `videos/${data.file}.mp4`);
+        playVideo();
+    });
+
+    socket.on('audio-start', function(data){
+        audio.setAttribute('data-control', data.control);
+        audio.setAttribute('data-file', data.file);
+        audio.setAttribute('src', `audio/${data.file}.mp3`);
+        playAudio();
+    });
+
+
+</script>
+
+</body>
+</html>
