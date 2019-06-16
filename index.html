@@ -8,14 +8,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        #video {
+            position:absolute;
+            left: -9000px;
+        }
         #canvas {
             filter: sepia(100%);
+            width: 800px;
+            height: 450px;
         }
-        #canvas:after {
+        #vignette {
+            position: relative;
+            width:800px;
+            height: 450px;
+        }
+        #vignette:after {
             content: '';
             position: absolute;
             top: 0; left: 0; bottom: 0; right: 0;
-            box-shadow: inset 0px 0px 150px black;
+            box-shadow: inset 0px 0px 200px black;
         }
     </style>
 </head>
@@ -25,7 +36,9 @@
     <source id="videoSrc" type="video/mp4">
 </video>
 
-<canvas id="canvas"></canvas>
+<div id="vignette">
+    <canvas id="canvas"></canvas>
+</div>
 
 <audio id="audio" data-control="" data-file=""></audio>
 <audio id="ticktock"></audio>
@@ -35,6 +48,7 @@
     let video = document.getElementById('video');
     let videoSrc = document.getElementById('videoSrc');
     let audio = document.getElementById('audio');
+    let vignette = document.getElementById('vignette');
 
     let canvas = document.getElementById('canvas');
     let ctx = canvas.getContext('2d');
@@ -47,35 +61,17 @@
         }
     }
 
-    function createCanvasAndCtxFromImage(el, width, height) {
-        const canvas = document.createElement('canvas');
-        if (!width) width = el.width;
-        if (!height) height = el.height;
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(el, 0, 0, width, height);
-        return [canvas, ctx];
-    };
-
-    function getGradient(ctx, width, height, colorSteps) {
-        const gradient = ctx.createRadialGradient(
-            width / 2,
-            height / 2,
-            0,
-            width / 2,
-            height / 2,
-            Math.sqrt(Math.pow(width / 2, 2) + Math.pow(height / 2, 2)),
-        );
-        colorSteps.forEach((color, idx, steps) => {
-            gradient.addColorStop(idx / (steps.length - 1), color);
-        });
-        return gradient;
-    };
+    function toBlack() {
+        ctx.fillStyle = "rgb(0,0,0)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     video.addEventListener('loadedmetadata', function() {
+        console.dir(video);
         canvas.width = video.offsetWidth;
         canvas.height = video.offsetHeight;
+        vignette.style.width = `${canvas.width}px`;
+        vignette.style.height = `${canvas.height}px`;
     });
     
     video.addEventListener('play', function() {
@@ -85,28 +81,6 @@
             if (!$this.paused && !$this.ended) {
                 // copy video frame to canvas
                 ctx.drawImage($this, 0, 0, canvas.width, canvas.height);
-
-                // vignette
-
-                [_, vCtx] = createCanvasAndCtxFromImage($this, canvas.width, canvas.height);
-
-                ctx.globalCompositeOperation = (ctx.globalCompositeOperation === 'multiply'
-                    ? 'multiply'
-                    : 'source-over'
-                );
-                ctx.fillStyle = getGradient(ctx, canvas.width, canvas.height, [
-                    'rgba(0,0,0,0)',
-                    'rgba(0,0,0,0)',
-                    `rgba(0,0,0,.7)`,
-                ]);
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                const vfData = vCtx.getImageData(0, 0, canvas.width, canvas.height);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                imageData.data.set(imageData.data.map((v, i) => v * vfData.data[i] / 255));
-                ctx.putImageData(imageData, 0, 0);
-
-
-
                 // do loop
                 setTimeout(loop, 1000 / 30); // drawing at 30fps
             }
@@ -115,17 +89,15 @@
 
     video.addEventListener('loaded', (event) => {
         socket.emit('video-loaded', getEventObj(event));
-        video.style.display = 'block';
     });
 
     video.addEventListener('playing', (event) => {
         socket.emit('video-playing', getEventObj(event));
-        video.style.display = 'block';
     });
 
     video.addEventListener('ended', (event) => {
         socket.emit('video-ended', getEventObj(event));
-        video.style.display = 'none';
+        toBlack();
     });
 
     audio.addEventListener('loaded', (event) => {
@@ -169,6 +141,7 @@
         playAudio();
     });
 
+    toBlack();
 
 </script>
 

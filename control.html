@@ -12,14 +12,14 @@
         .container a {
             margin: 10px 0;
         }
+        .playing {
+            background-color: green !important;
+        }
     </style>
 </head>
 <body>
 
 <section class="section">
-    <div class="container">
-        <p id="feedback"></p>
-    </div>
     <div class="container">
         <a id="intro" class="button is-medium is-block is-link">
             Play 'intro' video
@@ -35,7 +35,12 @@
 
 <script>
     let socket = io();
-    let feedback = document.getElementById('feedback');
+
+    function clearPlayingVideos()
+    {
+        document.getElementById('intro').classList.remove('playing');
+        document.getElementById('hurry').classList.remove('playing');
+    }
 
     document.getElementById("intro").addEventListener("click", function(e){
         e.preventDefault();
@@ -55,27 +60,28 @@
 
     socket.on('video-loaded', function(data){
         document.getElementById(data.control).classList.remove('is-loading');
+        clearPlayingVideos();
+        document.getElementById(data.control).classList.add('playing');
     });
     socket.on('video-playing', function(data){
-        console.log('video playing', data);
         document.getElementById(data.control).classList.remove('is-loading');
-        feedback.innerText = `Currently playing ${data.control} video`;
+        clearPlayingVideos();
+        document.getElementById(data.control).classList.add('playing');
     });
     socket.on('video-ended', function(data){
-        console.log('video ended', data);
-        feedback.innerText = '';
+        clearPlayingVideos();
     });
 
     socket.on('audio-loaded', function(data){
         document.getElementById(data.control).classList.remove('is-loading');
+        document.getElementById(data.control).classList.add('playing');
     });
     socket.on('audio-playing', function(data){
-        console.dir(data);
         document.getElementById(data.control).classList.remove('is-loading');
-        feedback.innerText = `Currently playing ${data.control} audio`;
+        document.getElementById(data.control).classList.add('playing');
     });
     socket.on('audio-ended', function(data){
-        feedback.innerText = '';
+        document.getElementById(data.control).classList.remove('playing');
     });
 </script>
 
