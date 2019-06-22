@@ -46,15 +46,16 @@
 
     ['video', 'audio'].forEach(function(which){
         for (let id in config.buttons[which]) {
-            document.getElementById(id).addEventListener("click", function(e){
+            document.getElementById(id).addEventListener('click', function(e){
                 e.preventDefault();
-                this.classList.add("loading");
-                socket.emit(`${which}-start`, { control:id, file:id });
+                this.classList.add('loading');
+                socket.emit(`${which}-start`, { id, ...config.buttons[which][id] });
             });
         }
         ['loaded', 'playing', 'ended'].forEach(function(event){
             socket.on(`${which}-${event}`, function(data){
-                let classes = document.getElementById(data.control).classList;
+                //console.log(`event: ${which}-${event}`);
+                let classes = document.getElementById(data.id).classList;
                 switch (event) {
                     case 'loading':
                         classes.add('loading');

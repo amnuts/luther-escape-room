@@ -4,145 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport"  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
     <script src="/socket.io/socket.io.js"></script>
-    <style>
-        #video {
-            position:absolute;
-            left: -9000px;
-        }
-        #canvas {
-            filter: sepia(100%);
-            width: 800px;
-            height: 450px;
-        }
-        #vignette {
-            position: relative;
-            width:800px;
-            height: 450px;
-        }
-        #vignette:after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            box-shadow: inset 0px 0px 200px black;
-        }
-    </style>
 </head>
 <body>
 
-<video id="video" data-control="" data-file="" style="width: 800px;">
+<video id="video" data-control="" style="width: 800px;">
     <source id="videoSrc" type="video/mp4">
 </video>
 
-<div id="vignette">
-    <canvas id="canvas"></canvas>
-</div>
-
-<audio id="audio" data-control="" data-file=""></audio>
+<audio id="audio" data-control=""></audio>
 <audio id="ticktock"></audio>
 
 <script>
     let socket = io();
     let video = document.getElementById('video');
-    let videoSrc = document.getElementById('videoSrc');
     let audio = document.getElementById('audio');
-    let vignette = document.getElementById('vignette');
+    let ticktock = document.getElementById('ticktock');
+    let videoSrc = document.getElementById('videoSrc');
+    let controls = {
+        video, audio, ticktock, videoSrc
+    };
 
-    let canvas = document.getElementById('canvas');
-    let ctx = canvas.getContext('2d');
-    ctx.globalCompositeOperation = 'multiply';
-    
-    function getEventObj(e) {
-        return {
-            control: e.target.getAttribute('data-control'),
-            file: e.target.getAttribute('data-file')
-        }
+    async function play(obj) {
+        try {
+            await obj.load();
+            await obj.play();
+        } catch(err) {}
     }
 
-    function toBlack() {
-        ctx.fillStyle = "rgb(0,0,0)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    video.addEventListener('loadedmetadata', function() {
-        console.dir(video);
-        canvas.width = video.offsetWidth;
-        canvas.height = video.offsetHeight;
-        vignette.style.width = `${canvas.width}px`;
-        vignette.style.height = `${canvas.height}px`;
-    });
-    
-    video.addEventListener('play', function() {
-        let $this = this; //cache
-        console.log('playing');
-        (function loop() {
-            if (!$this.paused && !$this.ended) {
-                // copy video frame to canvas
-                ctx.drawImage($this, 0, 0, canvas.width, canvas.height);
-                // do loop
-                setTimeout(loop, 1000 / 30); // drawing at 30fps
+    ['video', 'audio'].forEach(function(which) {
+        ['loaded', 'playing', 'ended'].forEach(function(eventName) {
+            controls[which].addEventListener(eventName, (e) => {
+                //console.log(`event ${eventName} on ${which}`);
+                socket.emit(`${which}-${eventName}`, JSON.parse(e.target.getAttribute('data-control')));
+            });
+        });
+        socket.on(`${which}-start`, function(data){
+            //console.log(`start the ${which}`);
+            controls[which].setAttribute('data-control', JSON.stringify(data));
+            let ctrl = (which === 'video') ? 'videoSrc' : 'audio';
+            controls[ctrl].setAttribute('src', `${which}/${data.id}.${data.format}`);
+            if (ctrl == 'videoSrc') {
+                controls[ctrl].setAttribute('type', `video/${data.format}`);
             }
-        })();
-    }, 0);
-
-    video.addEventListener('loaded', (event) => {
-        socket.emit('video-loaded', getEventObj(event));
+            play(controls[which]).then(function(){
+                //console.log(`${which} is starting`);
+            });
+        });
     });
-
-    video.addEventListener('playing', (event) => {
-        socket.emit('video-playing', getEventObj(event));
-    });
-
-    video.addEventListener('ended', (event) => {
-        socket.emit('video-ended', getEventObj(event));
-        toBlack();
-    });
-
-    audio.addEventListener('loaded', (event) => {
-        socket.emit('audio-loaded', getEventObj(event));
-    });
-
-    audio.addEventListener('playing', (event) => {
-        socket.emit('audio-playing', getEventObj(event));
-    });
-
-    audio.addEventListener('ended', (event) => {
-        socket.emit('audio-ended', getEventObj(event));
-    });
-
-    async function playVideo() {
-        try {
-            await video.load();
-            await video.play();
-        } catch(err) {}
-    }
-
-    async function playAudio() {
-        try {
-            await audio.load();
-            await audio.play();
-        } catch(err) {}
-    }
-
-    socket.on('video-start', function(data){
-        console.log('start the video');
-        video.setAttribute('data-control', data.control);
-        video.setAttribute('data-file', data.file);
-        videoSrc.setAttribute('src', `videos/${data.file}.mp4`);
-        playVideo();
-    });
-
-    socket.on('audio-start', function(data){
-        audio.setAttribute('data-control', data.control);
-        audio.setAttribute('data-file', data.file);
-        audio.setAttribute('src', `audio/${data.file}.mp3`);
-        playAudio();
-    });
-
-    toBlack();
-
 </script>
 
 </body>
