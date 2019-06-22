@@ -7,6 +7,7 @@ const port = 3000;
 app.use(express.static('public'));
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
+app.get('/game', (req, res) => res.sendFile(__dirname + '/game.html'));
 app.get('/control', (req, res) => res.sendFile(__dirname + '/control.html'));
 
 io.on('connection', (socket) => {
