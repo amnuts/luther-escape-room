@@ -4,84 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport"  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/config.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     <style>
-        .container a {
-            margin: 10px 0;
-        }
-        .playing {
-            background-color: green !important;
-        }
+        .container a { margin: 10px 0; }
+        .loading { background-color: hsl(48, 100%, 67%) !important; color: hsl(0, 0%, 14%) !important; }
+        .playing { background-color: hsl(141, 71%, 48%) !important; color: hsl(0, 0%, 98%) !important; }
     </style>
 </head>
 <body>
 
 <section class="section">
     <div class="container">
-        <a id="intro" class="button is-medium is-block is-link">
-            Play 'intro' video
-        </a>
-        <a id="hurry" class="button is-medium is-block is-link">
-            Play 'hurry up' video
-        </a>
-        <a id="monster1" class="button is-medium is-block is-link">
-            Play 'monster echo' audio
-        </a>
+        <div class="columns">
+            <script>
+                ['video', 'audio'].forEach(function(which){
+                    document.write(`<div class="column"><h1>${which}</h1>`);
+                    for (let id in config.buttons[which]) {
+                        document.writeln(`<a id="${id}" class="button is-medium is-block is-link has-background-grey-lighter has-text-grey-darker">`);
+                        document.writeln(config.buttons[which][id].text);
+                        document.writeln('</a>');
+                    }
+                    document.writeln('</div>');
+                });
+            </script>
+        </div>
     </div>
 </section>
 
 <script>
     let socket = io();
 
-    function clearPlayingVideos()
+    function clearPlaying(which)
     {
-        document.getElementById('intro').classList.remove('playing');
-        document.getElementById('hurry').classList.remove('playing');
+        Object.keys(config.buttons[which]).forEach(function (id) {
+            document.getElementById(id).classList.remove('playing');
+        });
     }
 
-    document.getElementById("intro").addEventListener("click", function(e){
-        e.preventDefault();
-        this.classList.add("is-loading");
-        socket.emit('video-start', {control:'intro', file:'intro'});
-    });
-    document.getElementById("hurry").addEventListener("click", function(e){
-        e.preventDefault();
-        this.classList.add("is-loading");
-        socket.emit('video-start', {control:'hurry', file:'hurry'});
-    });
-    document.getElementById("monster1").addEventListener("click", function(e){
-        e.preventDefault();
-        this.classList.add("is-loading");
-        socket.emit('audio-start', {control:'monster1', file:'monster_echo'});
-    });
-
-    socket.on('video-loaded', function(data){
-        document.getElementById(data.control).classList.remove('is-loading');
-        clearPlayingVideos();
-        document.getElementById(data.control).classList.add('playing');
-    });
-    socket.on('video-playing', function(data){
-        document.getElementById(data.control).classList.remove('is-loading');
-        clearPlayingVideos();
-        document.getElementById(data.control).classList.add('playing');
-    });
-    socket.on('video-ended', function(data){
-        clearPlayingVideos();
-    });
-
-    socket.on('audio-loaded', function(data){
-        document.getElementById(data.control).classList.remove('is-loading');
-        document.getElementById(data.control).classList.add('playing');
-    });
-    socket.on('audio-playing', function(data){
-        document.getElementById(data.control).classList.remove('is-loading');
-        document.getElementById(data.control).classList.add('playing');
-    });
-    socket.on('audio-ended', function(data){
-        document.getElementById(data.control).classList.remove('playing');
+    ['video', 'audio'].forEach(function(which){
+        for (let id in config.buttons[which]) {
+            document.getElementById(id).addEventListener("click", function(e){
+                e.preventDefault();
+                this.classList.add("loading");
+                socket.emit(`${which}-start`, { control:id, file:id });
+            });
+        }
+        ['loaded', 'playing', 'ended'].forEach(function(event){
+            socket.on(`${which}-${event}`, function(data){
+                let classes = document.getElementById(data.control).classList;
+                switch (event) {
+                    case 'loading':
+                        classes.add('loading');
+                        break;
+                    case 'playing':
+                        classes.remove('loading');
+                        clearPlaying(which);
+                        classes.add('playing');
+                        break;
+                    case 'ended':
+                        clearPlaying(which);
+                        break;
+                }
+            });
+        });
     });
 </script>
 
