@@ -1,7 +1,7 @@
 const config = {
-    ticking: {
-        max: 7,
-        min: 1
+    ticktock: {
+        max: 0.60,
+        min: 0.008
     },
     success: {
         video: "winner_winner_chicken_dinner",
