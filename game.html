@@ -10,7 +10,7 @@
     <style>
         * {
             box-sizing: border-box;
-            font: 1.3rem Inconsolata, monospace;
+            font: 1.8rem Inconsolata, monospace;
             color: white;
             text-shadow: 0 0 5px #C8C8C8;
         }
@@ -82,6 +82,9 @@
         #video {
             max-height: 900px;
         }
+        .hide {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -90,6 +93,11 @@
 
 <main>
     <video id="video" data-control="" src="" type="video/mp4"></video>
+    <section id="help" class="hide">
+        <p>Help section:</p>
+        <p>Solve the puzzles and find me the last incantation</p>
+        <p>Type `start` top get started</p>
+    </section>
 </main>
 
 <footer>
@@ -110,13 +118,18 @@
     let buzzer = document.getElementById('buzzer');
     let incantationContainer = document.getElementById('incantation-container');
     let incantationInput = document.getElementById('incantation');
+    let help = document.getElementById('help');
     let controls = { video, audio };
     let httpRequest;
+    let tries = 0;
 
     video.volume = 1;
 
     async function playMe(obj) {
         try {
+            clearInput();
+            hideHelp();
+            ticktock.volume = config.ticktock.min;
             await obj.load();
             await obj.play();
         } catch(err) {}
@@ -126,7 +139,9 @@
         ['loaded', 'playing', 'ended'].forEach(function(eventName) {
             controls[which].addEventListener(eventName, (e) => {
                 //console.log(`event ${eventName} on ${which}`);
-                socket.emit(`${which}-${eventName}`, JSON.parse(e.target.getAttribute('data-control')));
+                if (e.target.getAttribute('data-control') !== '') {
+                    socket.emit(`${which}-${eventName}`, JSON.parse(e.target.getAttribute('data-control')));
+                }
                 if (eventName === 'ended') {
                     ticktock.volume = config.ticktock.max;
                     if (which === 'video') {
@@ -138,7 +153,6 @@
         });
         socket.on(`${which}-start`, function(data){
             //console.log(`start the ${which}`);
-            ticktock.volume = config.ticktock.min;
             controls[which].setAttribute('data-control', JSON.stringify(data));
             controls[which].setAttribute('src', `${which}/${data.id}.${data.format}`);
             controls[which].setAttribute('type', `${which}/${data.format}`);
@@ -176,9 +190,15 @@
                     //console.log(`Success!!`);
                 });
             } else {
-                ticktock.volume = config.ticktock.min;
                 buzzer.play();
                 incantationContainer.classList.add('invalid');
+                if (tries !== -1) {
+                    ++tries;
+                }
+                if (tries === 3) {
+                    showHelp();
+                    tries = 0;
+                }
             }
         }
     }
@@ -190,17 +210,49 @@
 
     incantationContainer.addEventListener('submit', (e) => {
         e.preventDefault();
-        httpRequest = new XMLHttpRequest();
-        httpRequest.onreadystatechange = updateIncantation;
-        httpRequest.open('POST', '/check');
-        httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        httpRequest.send('incantation=' + encodeURIComponent(incantationInput.value));
+        hideHelp();
+        switch (incantationInput.value.toLowerCase()) {
+            case 'start':
+                tries = -1;
+                video.setAttribute('data-control', '');
+                video.setAttribute('src', `video/${config.intro.video}.${config.intro.format}`);
+                video.setAttribute('type', `video/${config.intro.format}`);
+                playMe(video).then(function () {
+                    //console.log(`${which} is starting`);
+                });
+                break;
+            case 'help':
+                tries = 0;
+                showHelp();
+                break;
+            default:
+                httpRequest = new XMLHttpRequest();
+                httpRequest.onreadystatechange = updateIncantation;
+                httpRequest.open('POST', '/check');
+                httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                httpRequest.send('incantation=' + encodeURIComponent(incantationInput.value));
+        }
     });
 
     incantationInput.addEventListener('blur', (e) => {
         incantationInput.focus();
     });
 
+    function showHelp() {
+        clearInput();
+        video.pause();
+        video.classList.add('hide');
+        help.classList.remove('hide');
+    }
+
+    function hideHelp() {
+        video.classList.remove('hide');
+        help.classList.add('hide');
+    }
+
+    function clearInput() {
+        incantationInput.value = '';
+    }
 </script>
 
 </body>

@@ -3,6 +3,10 @@ const config = {
         max: 0.60,
         min: 0.008
     },
+    intro: {
+        video: "intro",
+        format: "mp4"
+    },
     success: {
         video: "winner_winner_chicken_dinner",
         format: "mp4"
@@ -13,10 +17,6 @@ const config = {
     },
     buttons: {
         video: {
-            intro: {
-                text: "Introduction",
-                format: "mp4"
-            },
             did_stuff: {
                 text: "People did stuff",
                 format: "mp4"
