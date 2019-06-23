@@ -168,7 +168,13 @@
     function updateIncantation() {
         if (httpRequest.readyState === XMLHttpRequest.DONE) {
             if (httpRequest.status === 200) {
-                // play success
+                video.setAttribute('data-control', '');
+                video.setAttribute('src', `video/${config.success.video}.${config.success.format}`);
+                video.setAttribute('type', `video/${config.success.format}`);
+                ticktock.pause();
+                playMe(video).then(function(){
+                    //console.log(`Success!!`);
+                });
             } else {
                 ticktock.volume = config.ticktock.min;
                 buzzer.play();
