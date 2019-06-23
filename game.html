@@ -5,21 +5,55 @@
     <meta name="viewport"  content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="/config.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata&display=swap" rel="stylesheet">
     <script src="/socket.io/socket.io.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+            font: 1.3rem Inconsolata, monospace;
+            color: white;
+            text-shadow: 0 0 5px #C8C8C8;
+        }
         body {
             display: flex;
             min-height: 100vh;
             flex-direction: column;
+            background-color: black;
+            background-image: radial-gradient(rgba(0, 150, 0, 0.75), black 120%);
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            padding: 2rem;
+        }
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+        }
+        ::selection {
+            background: #0080FF;
+            text-shadow: none;
         }
         main {
             flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction:column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            margin: 0;
         }
         footer {
             display: flex;
             justify-content: center;
-            padding: 20px 0;
+            margin: 0;
         }
         .invalid {
             animation: shake .5s linear;
@@ -31,18 +65,37 @@
             92% { transform: translateX(5px); }
             0%, 100% { transform: translateX(0); }
         }
+        #incantation {
+            outline: none;
+            background-color: transparent;
+            width: 100%;
+            font: inherit;
+            border: none;
+            color: inherit;
+            margin: 0 0 0 0.5rem;
+        }
+        #incantation-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        #video {
+            max-height: 900px;
+        }
     </style>
 </head>
 <body>
 
+<h1>Dr Archibald Tillsbury</h1>
+
 <main>
-    <video id="video" data-control="" style="width: 800px;" src="" type="video/mp4"></video>
+    <video id="video" data-control="" src="" type="video/mp4"></video>
 </main>
 
 <footer>
-    <div id="incantation-container">
-        <input type="text" style="width:250px" id="incantation" /> <button id="incantation-check">speak the words!</button>
-    </div>
+    <form id="incantation-container">
+        $&gt; <input type="text" id="incantation" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus />
+    </form>
 </footer>
 
 <audio id="audio" data-control="" src="" type="audio/mp3"></audio>
@@ -55,8 +108,8 @@
     let audio = document.getElementById('audio');
     let ticktock = document.getElementById('ticktock');
     let buzzer = document.getElementById('buzzer');
-    let incantationCheck = document.getElementById('incantation-check');
     let incantationContainer = document.getElementById('incantation-container');
+    let incantationInput = document.getElementById('incantation');
     let controls = { video, audio };
     let httpRequest;
 
@@ -129,14 +182,19 @@
         ticktock.volume = config.ticktock.max;
     });
 
-    incantationCheck.addEventListener('click', (e) => {
+    incantationContainer.addEventListener('submit', (e) => {
         e.preventDefault();
         httpRequest = new XMLHttpRequest();
         httpRequest.onreadystatechange = updateIncantation;
         httpRequest.open('POST', '/check');
         httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        httpRequest.send('incantation=' + encodeURIComponent(document.getElementById('incantation').value));
+        httpRequest.send('incantation=' + encodeURIComponent(incantationInput.value));
     });
+
+    incantationInput.addEventListener('blur', (e) => {
+        incantationInput.focus();
+    });
+
 </script>
 
 </body>
