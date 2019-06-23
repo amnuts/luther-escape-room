@@ -190,6 +190,7 @@
                     //console.log(`Success!!`);
                 });
             } else {
+                clearInput();
                 buzzer.play();
                 incantationContainer.classList.add('invalid');
                 if (tries !== -1) {
@@ -243,6 +244,7 @@
         video.pause();
         video.classList.add('hide');
         help.classList.remove('hide');
+        ticktock.volume = config.ticktock.max;
     }
 
     function hideHelp() {
