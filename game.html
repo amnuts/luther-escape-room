@@ -7,10 +7,44 @@
     <script src="/config.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.5/css/bulma.min.css">
     <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+        }
+        footer {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .invalid {
+            animation: shake .5s linear;
+        }
+        @keyframes shake {
+            8%, 41% { transform: translateX(-10px); }
+            25%, 58% { transform: translateX(10px); }
+            75% { transform: translateX(-5px); }
+            92% { transform: translateX(5px); }
+            0%, 100% { transform: translateX(0); }
+        }
+    </style>
 </head>
 <body>
 
-<video id="video" data-control="" style="width: 800px;" src="" type="video/mp4"></video>
+<main>
+    <video id="video" data-control="" style="width: 800px;" src="" type="video/mp4"></video>
+</main>
+
+<footer>
+    <div id="incantation-container">
+        <input type="text" style="width:250px" id="incantation" /> <button id="incantation-check">speak the words!</button>
+    </div>
+</footer>
+
 <audio id="audio" data-control="" src="" type="audio/mp3"></audio>
 <audio id="ticktock" src="audio/ticking.mp3" type="audio/mp3" loop></audio>
 <audio id="buzzer" src="audio/buzzer.mp3" type="audio/mp3"></audio>
@@ -21,7 +55,12 @@
     let audio = document.getElementById('audio');
     let ticktock = document.getElementById('ticktock');
     let buzzer = document.getElementById('buzzer');
+    let incantationCheck = document.getElementById('incantation-check');
+    let incantationContainer = document.getElementById('incantation-container');
     let controls = { video, audio };
+    let httpRequest;
+
+    video.volume = 1;
 
     async function playMe(obj) {
         try {
@@ -57,28 +96,47 @@
     });
 
     socket.on(`ticktock-max`, function(data){
-        console.log('ticktock-max event');
-        console.dir(data);
         ticktock.volume = config.ticktock.max;
     });
 
     // start the ticking clock
 
     ticktock.volume = config.ticktock.max;
-    console.dir(ticktock);
     let ttPromise = ticktock.play();
-
     if (ttPromise !== undefined) {
-        ttPromise.then(_ => {
-            console.log('playing ticktock');
-        })
-        .catch(error => {
+        ttPromise.catch(error => {
             console.log('cannot play ticktock');
             console.dir(error);
         });
     }
 
-    video.volume = 1;
+    // set up the incantation stuff
+
+    function updateIncantation() {
+        if (httpRequest.readyState === XMLHttpRequest.DONE) {
+            if (httpRequest.status === 200) {
+                // play success
+            } else {
+                ticktock.volume = config.ticktock.min;
+                buzzer.play();
+                incantationContainer.classList.add('invalid');
+            }
+        }
+    }
+
+    incantationContainer.addEventListener('animationend', () => {
+        incantationContainer.classList.remove('invalid');
+        ticktock.volume = config.ticktock.max;
+    });
+
+    incantationCheck.addEventListener('click', (e) => {
+        e.preventDefault();
+        httpRequest = new XMLHttpRequest();
+        httpRequest.onreadystatechange = updateIncantation;
+        httpRequest.open('POST', '/check');
+        httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        httpRequest.send('incantation=' + encodeURIComponent(document.getElementById('incantation').value));
+    });
 </script>
 
 </body>
