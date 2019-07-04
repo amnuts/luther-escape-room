@@ -1,11 +1,11 @@
 const config = {
     volume: {
         ticktock: {
-            max: 0.60,
-            min: 0.009
+            max: 0.4,
+            min: 0.2
         },
-        ambient: 0.60,
-        video: 0.9
+        ambient: 0.6,
+        video: 1
     },
     intro: {
         video: "intro",
@@ -39,16 +39,20 @@ const config = {
             }
         },
         audio: {
-            attic_door: {
-                text: "Creepy attic door creaking",
+            ambient_dark_riser_with_boom: {
+                text: "Ambient dark riser with boom",
                 format: "mp3"
             },
-            creepy_child: {
-                text: "Creepy ghost child",
+            ambient_deep_bass_with_hiss: {
+                text: "Ambient deep bass with hiss",
                 format: "mp3"
             },
-            monster_echo: {
-                text: "Monster's growl",
+            ambient_harsh_riser_with_metal_hit: {
+                text: "Ambient harsh riser with metal hit",
+                format: "mp3"
+            },
+            i_see_you: {
+                text: "'I see you' creepy voice",
                 format: "mp3"
             }
         }
