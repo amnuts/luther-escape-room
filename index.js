@@ -34,4 +34,4 @@ io.on('connection', (socket) => {
     });
 });
 
-http.listen(port, () => console.log(`Example app listening on port ${port}!`));
+http.listen(port, () => console.log(`Escape room listening on ${port}!`));
