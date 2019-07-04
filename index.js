@@ -5,7 +5,7 @@ const io = require('socket.io')(http);
 const bodyParser  = require('body-parser');
 const port = 3000;
 // kid's never see this, so just putting here for now
-const incantation = 'spooky';
+const incantation = 'verjaardag';
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
