@@ -8,7 +8,7 @@ const config = {
         format: "mp4"
     },
     success: {
-        video: "winner_winner_chicken_dinner",
+        video: "congratulations",
         format: "mp4"
     },
     failure: {
@@ -17,12 +17,20 @@ const config = {
     },
     buttons: {
         video: {
-            did_stuff: {
-                text: "People did stuff",
+            hurry_at_my_door: {
+                text: "Hurry… They are at my door!",
                 format: "mp4"
             },
-            try_harder: {
-                text: "Try harden!",
+            hurry_everything_depends_on_you: {
+                text: "Everything depends on you; you must hurry!",
+                format: "mp4"
+            },
+            hurry_please: {
+                text: "You must hurry, please!",
+                format: "mp4"
+            },
+            hurry_time_of_essence: {
+                text: "Time is of the essence! We haven't got long…",
                 format: "mp4"
             }
         },
