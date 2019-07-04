@@ -1,7 +1,11 @@
 const config = {
-    ticktock: {
-        max: 0.60,
-        min: 0.009
+    volume: {
+        ticktock: {
+            max: 0.60,
+            min: 0.009
+        },
+        ambient: 0.60,
+        video: 0.9
     },
     intro: {
         video: "intro",

@@ -85,6 +85,9 @@
         .hide {
             display: none;
         }
+        .disabled {
+            color: #7d7d7d;
+        }
     </style>
 </head>
 <body>
@@ -129,8 +132,9 @@
     async function playMe(obj) {
         try {
             clearInput();
+            disableInput();
             hideHelp();
-            ticktock.volume = config.ticktock.min;
+            ticktock.volume = config.volume.ticktock.min;
             await obj.load();
             await obj.play();
         } catch(err) {}
@@ -144,7 +148,8 @@
                     socket.emit(`${which}-${eventName}`, JSON.parse(e.target.getAttribute('data-control')));
                 }
                 if (eventName === 'ended') {
-                    ticktock.volume = config.ticktock.max;
+                    enableInput();
+                    ticktock.volume = config.volume.ticktock.max;
                     if (which === 'video') {
                         e.target.removeAttribute('src');
                         e.target.load();
@@ -164,12 +169,12 @@
     });
 
     socket.on(`ticktock-max`, function(data){
-        ticktock.volume = config.ticktock.max;
+        ticktock.volume = config.volume.ticktock.max;
     });
 
     // start the ticking clock
 
-    ticktock.volume = config.ticktock.max;
+    ticktock.volume = config.volume.ticktock.max;
     let ttPromise = ticktock.play();
     if (ttPromise !== undefined) {
         ttPromise.catch(error => {
@@ -207,7 +212,7 @@
 
     incantationContainer.addEventListener('animationend', () => {
         incantationContainer.classList.remove('invalid');
-        ticktock.volume = config.ticktock.max;
+        ticktock.volume = config.volume.ticktock.max;
     });
 
     incantationContainer.addEventListener('submit', (e) => {
@@ -245,7 +250,7 @@
         video.pause();
         video.classList.add('hide');
         help.classList.remove('hide');
-        ticktock.volume = config.ticktock.max;
+        ticktock.volume = config.volume.ticktock.max;
     }
 
     function hideHelp() {
@@ -255,6 +260,17 @@
 
     function clearInput() {
         incantationInput.value = '';
+    }
+
+    function disableInput() {
+        incantationContainer.classList.add('disabled');
+        incantationInput.setAttribute('disabled', 'disabled');
+    }
+
+    function enableInput() {
+        incantationContainer.classList.remove('disabled');
+        incantationInput.removeAttribute('disabled');
+        incantationInput.focus();
     }
 </script>
 
