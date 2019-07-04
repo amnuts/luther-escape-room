@@ -127,7 +127,9 @@
     let httpRequest;
     let tries = 0;
 
-    video.volume = 1;
+    video.volume = config.volume.video;
+    buzzer.volume = config.volume.ambient;
+    audio.volume = config.volume.ambient;
 
     async function playMe(obj) {
         try {
