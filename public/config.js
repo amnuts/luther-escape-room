@@ -1,7 +1,7 @@
 const config = {
     ticktock: {
         max: 0.60,
-        min: 0.008
+        min: 0.009
     },
     intro: {
         video: "intro",
